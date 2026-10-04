@@ -217,7 +217,9 @@ export function ThinkApp() {
             );
           })}
         </nav>
-        <NeverDecides compact />
+        <div className="hidden sm:block">
+          <NeverDecides compact />
+        </div>
       </header>
 
       <main className={`relative z-10 flex flex-1 flex-col ${isMap ? "min-h-0" : "justify-center py-8"}`}>

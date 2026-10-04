@@ -36,7 +36,11 @@ function layout(w: number, h: number, factorCount: number, nodes: MapNode[]) {
   ordered.forEach((n, i) => {
     const a = -Math.PI / 2 + (i / ordered.length) * Math.PI * 2;
     const k = i % 2 ? 0.84 : 1;
-    pos[n.id] = { x: cx + Math.cos(a) * rx2 * k, y: cy + Math.sin(a) * ry2 * k };
+    const pad = narrow ? 84 : 104; // keep labels inside the frame
+    pos[n.id] = {
+      x: Math.min(w - pad, Math.max(pad, cx + Math.cos(a) * rx2 * k)),
+      y: Math.min(h - 40, Math.max(56, cy + Math.sin(a) * ry2 * k)),
+    };
   });
   return { center: { x: cx, y: cy }, factors, pos };
 }

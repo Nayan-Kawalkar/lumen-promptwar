@@ -19,7 +19,7 @@ export function Logo() {
 export function NeverDecides({ compact = false }: { compact?: boolean }) {
   return (
     <span
-      className="inline-flex items-center gap-1.5 rounded-full border border-line bg-white/[0.03] px-3 py-1.5 text-xs text-muted"
+      className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-line bg-white/[0.03] px-3 py-1.5 text-xs text-muted"
       title="Lumen asks questions and reflects patterns. It never picks an option for you."
     >
       <ShieldCheck className="size-3.5 text-factor" />
