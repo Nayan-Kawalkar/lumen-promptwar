@@ -4,6 +4,7 @@ import { motion } from "motion/react";
 import { Copy, Printer, RotateCcw } from "lucide-react";
 import { useState } from "react";
 import type { Report } from "@/lib/schemas";
+import { CertaintyShift, describeShift, type Stance } from "./CheckIn";
 
 function Section({ title, color, children, delay }: { title: string; color: string; children: React.ReactNode; delay: number }) {
   return (
@@ -35,23 +36,31 @@ const Bullets = ({ items, color }: { items: string[]; color: string }) => (
 export function ClarityReport({
   report,
   decision,
+  options,
+  stance,
+  onUpdateStance,
   visibility,
   startVisibility,
   onRestart,
 }: {
   report: Report;
   decision: string;
+  options: string[];
+  stance: { before?: Stance; after?: Stance };
+  onUpdateStance: () => void;
   visibility: number;
   startVisibility: number;
   onRestart: () => void;
 }) {
   const [copied, setCopied] = useState(false);
+  const { before, after } = stance;
 
   const asText = () =>
     [
       `LUMEN · CLARITY REPORT`,
       `Decision: ${decision}`,
       `Visibility: ${startVisibility}% → ${visibility}%`,
+      ...(before && after ? [`Certainty: ${before.sure}% → ${after.sure}%`, describeShift(options, before, after)] : []),
       ``,
       report.headline,
       ``,
@@ -84,6 +93,17 @@ export function ClarityReport({
           <span className="text-light">{visibility}%</span>
         </div>
       </motion.div>
+
+      {before && after && (
+        <CertaintyShift
+          options={options}
+          before={before}
+          after={after}
+          startVisibility={startVisibility}
+          visibility={visibility}
+          onUpdate={onUpdateStance}
+        />
+      )}
 
       <div className="mt-10 grid gap-4 md:grid-cols-2">
         <Section title="What you seem to value" color="var(--factor)" delay={0.1}>

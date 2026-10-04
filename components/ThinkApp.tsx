@@ -13,6 +13,7 @@ import { VisibilityMeter } from "./VisibilityMeter";
 import { LensDeck } from "./LensDeck";
 import { PreMortem } from "./PreMortem";
 import { ClarityReport } from "./ClarityReport";
+import { CheckIn, type Stance } from "./CheckIn";
 import { api, dimensionScores, KIND_META, toExchanges, toMapNodes, visibility, type MapNode } from "@/lib/client";
 import type { Analysis, Lenses, Premortem, Report } from "@/lib/schemas";
 import { DEMO_CONTEXT, DEMO_DECISION } from "@/lib/demo";
@@ -50,6 +51,9 @@ export function ThinkApp() {
   const [pmError, setPmError] = useState<string | null>(null);
   const [report, setReport] = useState<Report | null>(null);
   const [reportError, setReportError] = useState<string | null>(null);
+  /** Certainty Shift: where the user stood before exploring vs. before reading the report. */
+  const [stance, setStance] = useState<{ before?: Stance; after?: Stance }>({});
+  const [checkIn, setCheckIn] = useState<"before" | "after" | null>(null);
 
   const notifyFallback = useCallback(() => {
     setToast("Gemini is busy right now, so Lumen is showing a cached response.");
@@ -83,6 +87,8 @@ export function ThinkApp() {
       setPremortem(null);
       setReport(null);
       setSelected(null);
+      setStance({});
+      setCheckIn("before");
       setStage("map");
     } catch (e) {
       setAnalyzeError(e instanceof Error ? e.message : "Something went wrong");
@@ -173,13 +179,19 @@ export function ThinkApp() {
   const go = (s: Stage) => {
     setSelected(null);
     setStage(s);
-    if (s === "report") buildReport();
+    if (s === "report") {
+      buildReport();
+      // The report loads behind the second check-in, so the wait doubles as reflection time.
+      if (stance.before && !stance.after) setCheckIn("after");
+    }
     window.scrollTo({ top: 0 });
   };
 
   const restart = () => {
     setAnalysis(null);
     setNodes([]);
+    setStance({});
+    setCheckIn(null);
     setInput({ decision: "", context: "", demo: false });
     go("describe");
   };
@@ -195,7 +207,7 @@ export function ThinkApp() {
         <div className="fog-blob bottom-[-20%] right-[-10%] h-[60vh] w-[50vw] bg-[#2a1a2e]/60" style={{ animationDelay: "-12s" }} />
       </div>
 
-      <header className="no-print relative z-50 flex items-center justify-between gap-3 px-4 py-3 md:px-6">
+      <header inert={checkIn !== null} className="no-print relative z-50 flex items-center justify-between gap-3 px-4 py-3 md:px-6">
         <div className="flex items-center gap-4">
           <Logo />
           {analysis && stage !== "describe" && stage !== "scanning" && <VisibilityMeter value={vis} dimensions={dims} />}
@@ -225,7 +237,7 @@ export function ThinkApp() {
         </div>
       </header>
 
-      <main className={`relative z-10 flex flex-1 flex-col ${isMap ? "min-h-0" : "justify-center py-8"}`}>
+      <main inert={checkIn !== null} className={`relative z-10 flex flex-1 flex-col ${isMap ? "min-h-0" : "justify-center py-8"}`}>
         <AnimatePresence mode="wait">
           {stage === "describe" && (
             <motion.div key="describe" exit={{ opacity: 0 }}>
@@ -374,7 +386,16 @@ export function ThinkApp() {
           {stage === "report" && analysis && (
             <motion.div key="report" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
               {report ? (
-                <ClarityReport report={report} decision={input.decision} visibility={vis} startVisibility={startVis} onRestart={restart} />
+                <ClarityReport
+                  report={report}
+                  decision={input.decision}
+                  options={analysis.options}
+                  stance={stance}
+                  onUpdateStance={() => setCheckIn("after")}
+                  visibility={vis}
+                  startVisibility={startVis}
+                  onRestart={restart}
+                />
               ) : reportError ? (
                 <div className="text-center">
                   <p className="text-contradiction">{reportError}</p>
@@ -392,6 +413,21 @@ export function ThinkApp() {
           )}
         </AnimatePresence>
       </main>
+
+      <AnimatePresence>
+        {checkIn && analysis && (
+          <CheckIn
+            key={checkIn}
+            phase={checkIn}
+            options={analysis.options}
+            onDone={(s) => {
+              setStance((prev) => ({ ...prev, [checkIn]: s }));
+              setCheckIn(null);
+            }}
+            onSkip={() => setCheckIn(null)}
+          />
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {toast && (
