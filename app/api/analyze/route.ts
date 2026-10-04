@@ -10,7 +10,7 @@ export async function POST(request: Request) {
     request,
     AnalyzeRequest,
     async ({ decision, context }) => {
-      const result = await generateJSON(Analysis, analyzePrompt(decision, context), { temperature: 0.6 });
+      const result = await generateJSON(Analysis, analyzePrompt(decision, context), { thinking: "low" });
       // Keep factor references valid so the map can draw threads safely.
       result.nodes = result.nodes.map((n) => ({
         ...n,

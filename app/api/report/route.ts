@@ -9,7 +9,7 @@ export async function POST(request: Request) {
   return handle(
     request,
     ReportRequest,
-    (body) => generateJSON(Report, reportPrompt(body), { temperature: 0.5 }),
+    (body) => generateJSON(Report, reportPrompt(body), { thinking: "low" }),
     (body) => (body.decision === DEMO_DECISION ? DEMO_REPORT : undefined),
   );
 }

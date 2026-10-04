@@ -9,7 +9,7 @@ export async function POST(request: Request) {
   return handle(
     request,
     LensRequest,
-    ({ decision, context, summary }) => generateJSON(Lenses, lensPrompt(decision, context, summary), { temperature: 0.8 }),
+    ({ decision, context, summary }) => generateJSON(Lenses, lensPrompt(decision, context, summary), { thinking: "low" }),
     (body) => (body.decision === DEMO_DECISION ? DEMO_LENSES : undefined),
   );
 }
