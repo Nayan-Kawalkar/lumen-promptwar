@@ -63,13 +63,20 @@ const SessionContext = z.object({
   summary: z.string().max(1200),
 });
 
-export const LensRequest = SessionContext;
+const Options = z.array(z.string().max(80)).max(4).default([]);
+
+export const LensRequest = SessionContext.extend({
+  options: Options,
+  covered: z.array(z.string().max(300)).max(20).default([]),
+});
 
 export const PremortemRequest = SessionContext.extend({
+  path: z.string().max(80).default(""),
   story: z.string().trim().min(5).max(2500),
 });
 
 export const ReportRequest = SessionContext.extend({
+  options: Options,
   explored: z
     .array(
       z.object({
@@ -96,37 +103,44 @@ export const Analysis = z.object({
   summary: z
     .string()
     .describe("One or two sentences mirroring the user's reasoning back, neutrally, in second person."),
+  options: z
+    .array(z.string().describe("2-5 word neutral label for one path, e.g. 'Take the internship'."))
+    .describe("The 2-3 paths in play. Always include the not-doing-it / status-quo path."),
   factors: z
     .array(
       z.object({
-        label: z.string().describe("2-4 word label for a reason the user explicitly gave."),
-        quote: z.string().describe("The user's own words this came from, verbatim or near-verbatim."),
+        label: z.string().describe("2-4 plain words for a reason or constraint the user explicitly gave."),
+        quote: z.string().describe("Exact words copied from the user's text."),
       }),
     )
-    .describe("The reasons the user is consciously weighing. 2-6 items."),
+    .describe("Every reason or constraint the user is consciously weighing, on any side. 2-6 items."),
   nodes: z
     .array(
       z.object({
         kind: NodeKind,
-        title: z.string().describe("Punchy 2-6 word label."),
+        title: z.string().describe("Punchy 2-5 word label."),
         insight: z
           .string()
-          .describe("1-2 sentences on why this might matter for THIS person. No advice, no verdict."),
+          .describe("1-2 sentences on why this might matter for THIS person. No advice, no verdict, no loaded words."),
         quote: z
           .string()
-          .describe("The user's words this is grounded in. Empty string if it is about something they never mentioned."),
+          .describe("Exact words copied from the user's text that this is grounded in. Empty string if they never mentioned it."),
         question: z
           .string()
-          .describe("One open, specific, Socratic question that helps them examine this themselves."),
+          .describe("One open, specific, Socratic question. Not yes/no, does not assume which option they choose."),
         dimension: Dimension,
         severity: z.number().int().min(1).max(3).describe("1 = minor, 3 = could change how the decision looks."),
         factor: z
           .number()
           .int()
-          .describe("Index into factors[] this node most relates to, or -1."),
+          .describe("Index into factors[] this node most directly questions, or -1."),
+        about: z
+          .number()
+          .int()
+          .describe("Index into options[] of the path this node examines, or -1 if it applies to every path."),
       }),
     )
-    .describe("4-5 hidden assumptions, 4-5 blind spots, and 1-2 contradictions."),
+    .describe("4-5 hidden assumptions, 4-5 blind spots, 0-2 real contradictions. Each option examined by at least 2 nodes."),
   coverage: z
     .array(
       z.object({
@@ -147,7 +161,7 @@ export const Reflection = z.object({
     .describe("One deeper follow-up question, or empty string if they have clearly examined this."),
   insight: z
     .string()
-    .describe("Max 14 words: what the user now sees about this, in their terms."),
+    .describe("Max 14 words: the user's own first-person realisation, in their words. Never a judgement of them."),
   asked_for_verdict: z.boolean().describe("True if the user asked the AI to decide for them."),
 });
 export type Reflection = z.infer<typeof Reflection>;
@@ -195,6 +209,8 @@ export const Report = z.object({
   info_to_gather: z
     .array(z.string())
     .describe("Concrete facts they could go find out before deciding (who to ask, what to check). 2-4 items."),
-  closing: z.string().describe("One sentence handing the decision back to them. Never pick an option."),
+  closing: z
+    .string()
+    .describe("One sentence naming what matters on each side in equal terms and handing the decision back. Never lean."),
 });
 export type Report = z.infer<typeof Report>;

@@ -6,6 +6,9 @@ import { Eye, Loader2, Sparkles } from "lucide-react";
 import type { Premortem } from "@/lib/schemas";
 
 export function PreMortem({
+  options,
+  path,
+  onPath,
   story,
   result,
   onStory,
@@ -13,6 +16,9 @@ export function PreMortem({
   loading,
   error,
 }: {
+  options: string[];
+  path: number;
+  onPath: (i: number) => void;
   story: string;
   result: Premortem | null;
   onStory: (v: string) => void;
@@ -32,9 +38,28 @@ export function PreMortem({
         </h2>
         <p className="mx-auto mt-4 max-w-lg text-sm text-muted">
           Don&apos;t argue with it — just tell the story. What happened? Psychologists call this a pre-mortem: imagining
-          failure makes hidden risks easier to see.
+          failure makes hidden risks easier to see. Try it for each path — every option can go wrong.
         </p>
       </div>
+
+      {options.length > 1 && (
+        <div className="mt-6 flex flex-wrap items-center justify-center gap-2" role="radiogroup" aria-label="Which path to imagine">
+          <span className="label mr-1">Imagine you chose</span>
+          {options.map((o, i) => (
+            <button
+              key={o}
+              role="radio"
+              aria-checked={path === i}
+              onClick={() => onPath(i)}
+              className={`rounded-full border px-4 py-1.5 text-sm transition ${
+                path === i ? "border-contradiction/60 bg-contradiction/15 text-text" : "border-line text-muted hover:text-text"
+              }`}
+            >
+              {o}
+            </button>
+          ))}
+        </div>
+      )}
 
       <div
         className="glass mt-8 rounded-3xl p-2 transition"

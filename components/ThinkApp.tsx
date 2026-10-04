@@ -44,6 +44,7 @@ export function ThinkApp() {
   const [lenses, setLenses] = useState<Lenses | null>(null);
   const [lensNotes, setLensNotes] = useState<Record<string, string>>({});
   const [story, setStory] = useState("");
+  const [pmPath, setPmPath] = useState(0);
   const [premortem, setPremortem] = useState<Premortem | null>(null);
   const [pmLoading, setPmLoading] = useState(false);
   const [pmError, setPmError] = useState<string | null>(null);
@@ -78,6 +79,7 @@ export function ThinkApp() {
       setLenses(null);
       setLensNotes({});
       setStory("");
+      setPmPath(0);
       setPremortem(null);
       setReport(null);
       setSelected(null);
@@ -108,7 +110,7 @@ export function ThinkApp() {
   useEffect(() => {
     if (stage !== "lenses" || lenses || !ctx) return;
     let cancelled = false;
-    api<Lenses>("/api/lens", ctx)
+    api<Lenses>("/api/lens", { ...ctx, options: analysis?.options ?? [], covered: nodes.map((n) => n.question) })
       .then(({ data, fallback }) => {
         if (cancelled) return;
         if (fallback) notifyFallback();
@@ -127,7 +129,7 @@ export function ThinkApp() {
     setPmLoading(true);
     setPmError(null);
     try {
-      const { data, fallback } = await api<Premortem>("/api/premortem", { ...ctx, story });
+      const { data, fallback } = await api<Premortem>("/api/premortem", { ...ctx, path: analysis?.options[pmPath] ?? "", story });
       if (fallback) notifyFallback();
       setPremortem(data);
     } catch (e) {
@@ -155,9 +157,10 @@ export function ThinkApp() {
     try {
       const { data, fallback } = await api<Report>("/api/report", {
         ...ctx,
+        options: analysis.options,
         explored,
         unexplored: nodes.filter((n) => !n.lit).map((n) => n.title),
-        premortem: story.trim() || undefined,
+        premortem: story.trim() ? `Imagining they chose "${analysis.options[pmPath] ?? "it"}": ${story.trim()}`.slice(0, 2500) : undefined,
       });
       if (fallback) notifyFallback();
       setReport(data);
@@ -323,6 +326,7 @@ export function ThinkApp() {
                   <NodePanel
                     key={selectedNode.id}
                     node={selectedNode}
+                    options={analysis.options}
                     decision={input.decision}
                     summary={analysis.summary}
                     onUpdate={update}
@@ -349,7 +353,20 @@ export function ThinkApp() {
 
           {stage === "premortem" && (
             <motion.div key="pm" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              <PreMortem story={story} result={premortem} onStory={setStory} onRun={runPremortem} loading={pmLoading} error={pmError} />
+              <PreMortem
+                options={analysis?.options ?? []}
+                path={pmPath}
+                onPath={(i) => {
+                  setPmPath(i);
+                  setPremortem(null);
+                }}
+                story={story}
+                result={premortem}
+                onStory={setStory}
+                onRun={runPremortem}
+                loading={pmLoading}
+                error={pmError}
+              />
               <StageNav onBack={() => go("lenses")} onNext={() => go("report")} nextLabel="See my Clarity Report" />
             </motion.div>
           )}
@@ -415,6 +432,7 @@ function ListView({ analysis, nodes, onSelect }: { analysis: Analysis; nodes: Ma
       <div className="mx-auto max-w-3xl">
         <p className="label mb-2">Your decision</p>
         <h2 className="font-serif text-3xl">{analysis.title}</h2>
+        {analysis.options.length > 1 && <p className="mt-1 text-xs uppercase tracking-wider text-muted">{analysis.options.join(" ⟷ ")}</p>}
         <p className="mt-2 text-sm text-muted">{analysis.summary}</p>
         <div className="mt-4 flex flex-wrap gap-2">
           {analysis.factors.map((f) => (

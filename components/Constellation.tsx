@@ -210,6 +210,16 @@ export function Constellation({
           <div className="absolute inset-0 -z-10 rounded-full bg-light/20 blur-3xl" />
           <p className="label mb-1 text-light/80">Your decision</p>
           <p className="font-serif text-lg leading-snug text-text md:text-2xl">{analysis.title}</p>
+          {analysis.options.length > 1 && (
+            <p className="mt-2 text-[10px] uppercase tracking-[0.14em] text-muted md:text-[11px]">
+              {analysis.options.map((o, i) => (
+                <span key={o}>
+                  {i > 0 && <span className="mx-1.5 text-light/60">⟷</span>}
+                  {o}
+                </span>
+              ))}
+            </p>
+          )}
         </motion.div>
       )}
 
@@ -225,7 +235,7 @@ export function Constellation({
             style={{ left: L.factors[i].x, top: L.factors[i].y }}
           >
             <div
-              title={`“${f.quote}”`}
+              title={f.quote ? `You said: “${f.quote}”` : undefined}
               className="flex items-center gap-1.5 whitespace-nowrap rounded-full border border-factor/30 bg-factor/10 px-2.5 py-1 text-[11px] text-factor shadow-[0_0_24px_-6px_var(--factor)] md:text-xs"
             >
               <span className="size-1.5 rounded-full bg-factor" />

@@ -8,6 +8,7 @@ import { DIMENSION_LABELS, type Reflection } from "@/lib/schemas";
 
 export function NodePanel({
   node,
+  options,
   decision,
   summary,
   onUpdate,
@@ -17,6 +18,7 @@ export function NodePanel({
   onFallback,
 }: {
   node: MapNode;
+  options: string[];
   decision: string;
   summary: string;
   onUpdate: (id: string, patch: Partial<MapNode>) => void;
@@ -99,6 +101,11 @@ export function NodePanel({
 
       <div className="scroll-thin flex-1 overflow-y-auto px-5 pb-4">
         <h2 className="mt-3 font-serif text-3xl leading-tight">{node.title}</h2>
+        {options.length > 1 && (
+          <p className="mt-1.5 text-xs text-muted">
+            Examines: <span className="text-text/80">{node.about >= 0 ? options[node.about] : "every path"}</span>
+          </p>
+        )}
 
         {node.quote && (
           <div className="mt-4 flex gap-2.5 rounded-2xl border border-line bg-white/[0.02] p-3 text-sm text-text/80">
